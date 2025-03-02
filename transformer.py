@@ -2,27 +2,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-class PositionEncoding(nn.Module):
-    def __init__(self, d_model=512, max_len=128):
-        """_summary_
-
-        Args:
-            d_model (int, optional): size of embedding dimension. Defaults to 512.
-            max_len (int, optional): max length of input seq. Defaults to 128.
-        """
-        super().__init__()
-        pe = torch.zeros(max_len, d_model)
-        position = torch.arange(start=0, end=max_len, step=1).float().unsqueeze(1)
-        embedding_index = torch.arange(start=0, end=d_model, step=2).float()
-        term_for_div = 1 / torch.tensor(10000.0) ** (embedding_index / d_model)
-        pe[:, 0::2] = torch.sin(position * term_for_div)
-        pe[:, 1::2] = torch.cos(position * term_for_div)
-        self.register_buffer("pe", pe)
-
-    def forward(self, word_embeddings):
-        return word_embeddings + self.pe[: word_embeddings.size(0), :]
-
-
 
 
 class FeedForwardNN(nn.Module):
@@ -59,7 +38,7 @@ class DecoderTransformerBlock(nn.Module):
         """
         super().__init__()
         self.ln_1 = nn.LayerNorm(d_model)
-        self.attn = nn.MultiheadAttention(d_model, num_heads, max_length, dropout, bias)
+        self.attn = nn.MultiheadAttention(d_model, num_heads, dropout=dropout, bias=bias)
         self.ln_2 = nn.LayerNorm(d_model)
         self.ffnn = FeedForwardNN(d_model, bias, dropout)
 
@@ -88,7 +67,7 @@ class Transformer(nn.Module):
         super().__init__()
         self.transformer = nn.ModuleDict(dict(
             wte=nn.Embedding(vocab_size, d_model), # token embeddings
-            wpe=PositionEncoding(d_model, max_length), # position embeddings
+            wpe=nn.Embedding(max_length, d_model), # position embeddings
             drop=nn.Dropout(dropout),
             blocks=nn.ModuleList([DecoderTransformerBlock(d_model, num_heads, max_length, bias, dropout) for _ in range(layers)]),
             ln_f=nn.LayerNorm(d_model),
@@ -103,7 +82,7 @@ class Transformer(nn.Module):
 
         # generate token and position embeddings
         tok_emb = self.transformer.wte(idx) # [B, T, d]
-        pos_emb = self.transformer.wpe(pos) # [T, d]
+        pos_emb = self.transformer.wpe(pos).unsqueeze(0).expand_as(tok_emb)
         x = self.transformer.drop(tok_emb + pos_emb)
 
         # pass through all decoder-only blocks
