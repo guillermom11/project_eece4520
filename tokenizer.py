@@ -29,7 +29,7 @@ class BPE:
             new_vocab[new_word] = self.vocab[word]
         self.vocab = new_vocab
 
-    def train(self, data, num_merges):
+    def train_bpe(self, data, num_merges):
         # Train the BPE model using the input data
         self.build_vocab(data)
         for i in range(num_merges):
