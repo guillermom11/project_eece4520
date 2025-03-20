@@ -66,3 +66,24 @@ class BPE:
                     break
 
         return tokens
+    def encode(self, text):
+        words = text.lower().split()
+        tokens = []
+        for word in words:
+            word_tokens = self.tokenize(word)
+            tokens.extend(word_tokens)
+
+        # Convert tokens to IDs
+        ids = []
+        for token in tokens:
+            if token in self.token_to_id:
+                ids.append(self.token_to_id[token])
+            else:
+                ids.append(self.token_to_id["<UNK>"])
+
+        return ids
+
+    def decode(self, ids):
+        tokens = [self.id_to_token.get(id, "<UNK>") for id in ids]
+        text = ''.join(tokens)
+        return text

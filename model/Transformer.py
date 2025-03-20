@@ -2,56 +2,9 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+from Feedforwardnn import FeedForwardNN
 
-
-class FeedForwardNN(nn.Module):
-
-    def __init__(self,d_model,bias=False,dropout=0.2):
-        """
-        Arguments:
-        d_model: size of embedding dimension
-        bias: whether or not to use bias in linear layers
-        dropout: probability of dropout
-        """
-        super().__init__()
-        self.c_fc    = nn.Linear(d_model, 4 * d_model, bias=bias)
-        self.gelu    = nn.GELU()
-        self.c_proj  = nn.Linear(4 * d_model, d_model, bias=bias)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, x):
-        x = self.c_fc(x) # [B, T, 4*d]
-        x = self.gelu(x)
-        x = self.c_proj(x) # [B, T, d]
-        x = self.dropout(x)
-        return x
-
-class DecoderTransformerBlock(nn.Module):
-    def __init__(self,d_model,num_heads,max_length,bias=False,dropout=0.2):
-        """
-        Arguments:
-        d_model: size of embedding dimension
-        num_heads: number of attention heads
-        max_length: maximum length of input sequences (in tokens)
-        bias: whether or not to use bias in linear layers
-        dropout: probability of dropout
-        """
-        super().__init__()
-        self.ln_1 = nn.LayerNorm(d_model)
-        self.attn = nn.MultiheadAttention(d_model, num_heads, dropout=dropout, bias=bias)
-        self.ln_2 = nn.LayerNorm(d_model)
-        self.ffnn = FeedForwardNN(d_model, bias, dropout)
-
-    def forward(self, x,padding_mask=0):
-        bs, l, h = x.shape
-        mask = torch.triu(torch.ones(l, l, device=x.device), 1).bool()
-        #residual connections
-        norm_x = self.ln_1(x)
-        #masking attention
-        x = x + self.attn(norm_x,norm_x,norm_x,attn_mask=mask,key_padding_mask=padding_mask)[0]
-        norm_x = self.ln_2(x)
-        x = x + self.ffnn(norm_x)
-        return x
+from Decodertransformerblock import DecoderTransformerBlock
 class Transformer(nn.Module):
     def __init__(self, d_model, num_heads, max_length, vocab_size,layers, bias=False,dropout=0.2):
         """
