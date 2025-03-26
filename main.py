@@ -3,7 +3,7 @@ import torch
 from torch.optim import AdamW
 # Import local modules
 from config import ModelConfig
-from model import Transformer
+from model.Transformer import Transformer
 from tokenizer import BPE
 from dataset import TextDataset, collate_fn
 from utils import Utils
@@ -25,7 +25,7 @@ def main():
     
     # Initialize BPE tokenizer
     tokenizer = BPE()
-    
+      
     # Prepare data for BPE training
     bpe_data = CustomDataLoader.prepare_bpe_data(train_texts)
     
@@ -124,4 +124,5 @@ def main():
     )
 
     print(f"\nPlease submit the entire '{submission_dir}' folder to your professor.")
-    
+if __name__ == "__main__":
+    main()

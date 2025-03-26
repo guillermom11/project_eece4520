@@ -2,9 +2,9 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from Feedforwardnn import FeedForwardNN
 
-from Decodertransformerblock import DecoderTransformerBlock
+from model.DecoderTransformerBlock import DecoderTransformerBlock
+
 class Transformer(nn.Module):
     def __init__(self, d_model, num_heads, max_length, vocab_size,layers, bias=False,dropout=0.2):
         """

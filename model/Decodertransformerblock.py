@@ -1,6 +1,7 @@
 import torch
 from torch import nn
-from Feedforwardnn import FeedForwardNN
+from model.FeedForwardNN import FeedForwardNN
+
 class DecoderTransformerBlock(nn.Module):
     def __init__(self,d_model,num_heads,max_length,bias=False,dropout=0.2):
         """
