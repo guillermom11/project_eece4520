@@ -3,7 +3,7 @@ import torch
 from torch.optim import AdamW
 # Import local modules
 from config import ModelConfig
-from model.Transformer import Transformer
+from HuggingFaceDatasetAdapter import HuggingFaceDatasetAdapter
 from tokenizer import BPE
 from dataset import TextDataset, collate_fn
 from utils import Utils
@@ -11,7 +11,7 @@ from dataloader import CustomDataLoader
 from trainer import Trainer
 from evaluator import Evaluator
 from generator import TextGenerator
-
+from model.TransformerBuilder import TransformerBuilder
 def main():
     # Set random seeds for reproducibility
     Utils.set_seeds()
@@ -20,6 +20,15 @@ def main():
     # Determine device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+    # Load datasets using the adapter
+    train_adapter = HuggingFaceDatasetAdapter(split="train")
+    valid_adapter = HuggingFaceDatasetAdapter(split="validation")
+    test_adapter = HuggingFaceDatasetAdapter(split="test")
+    
+    # Extract text from the adapter
+    train_texts = train_adapter.get_texts()
+    valid_texts = valid_adapter.get_texts()
+    test_texts = test_adapter.get_texts()
     # Load and prepare data
     train_texts, valid_texts, test_texts = CustomDataLoader.load_and_prepare_data()
     
@@ -45,15 +54,18 @@ def main():
     valid_loader = CustomDataLoader(valid_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=collate_fn)
     test_loader = CustomDataLoader(test_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=collate_fn)
     
-    model = Transformer(
-        d_model=config.d_model,
-        num_heads=config.num_heads,
-        max_length=config.max_length,
-        vocab_size=config.num_merges,  # Adjust vocab_size as needed
-        layers=config.layers,
-        dropout=config.dropout,
-        bias=config.bias
-    ).to(device)
+    model = (
+        TransformerBuilder()
+        .set_d_model(768)
+        .set_num_heads(12)
+        .set_max_length(512)
+        .set_vocab_size(30000)  # Adjust as needed
+        .set_layers(12)
+        .set_bias(True)
+        .set_dropout(0.1)
+        .set_device("cuda")
+        .build()
+    )
     
     optimizer = AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
     
