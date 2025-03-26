@@ -1,30 +1,16 @@
-from datasets import load_dataset
-from torch.utils.data import Dataset
+from CustomDataLoader import CustomDataLoader
+from DataLoaderInterface import DataLoaderInterface
+from HuggingFaceDataset import HuggingFaceDataset
 
-class HuggingFaceDatasetAdapter(Dataset):
-    """
-    Adapter to convert Hugging Face datasets into a format compatible with CustomDataLoader.
-    """
-    def __init__(self, dataset_name="wikitext", dataset_config="wikitext-2-raw-v1", split="train"):
-        """
-        Initializes the adapter by loading the dataset.
-        
-        Arguments:
-        - dataset_name (str): Name of the dataset on Hugging Face.
-        - dataset_config (str): Specific configuration/version of the dataset.
-        - split (str): Data split ('train', 'validation', or 'test').
-        """
-        self.dataset = load_dataset(dataset_name, dataset_config)[split]
-        self.text_data = self.dataset["text"]
+class HuggingFaceDatasetAdapter(DataLoaderInterface):
+    """Adapter: Converts Hugging Face dataset into a format compatible with CustomDataLoader."""
 
-    def __len__(self):
-        """Returns the number of data samples."""
-        return len(self.text_data)
+    def __init__(self, dataset_name, split="train"):
+        self.hf_dataset = HuggingFaceDataset()
+        self.dataset_name = dataset_name
+        self.split = split
 
-    def __getitem__(self, idx):
-        """Returns a single text sample."""
-        return self.text_data[idx]
-
-    def get_texts(self):
-        """Returns all text samples as a list."""
-        return self.text_data
+    def load_data(self):
+        """Loads and prepares data for CustomDataLoader."""
+        raw_texts = self.hf_dataset.load_hf_dataset(self.dataset_name, self.split)
+        return CustomDataLoader.prepare_bpe_data(raw_texts)  # Convert into tokenized format
