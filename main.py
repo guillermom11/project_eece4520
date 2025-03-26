@@ -7,7 +7,6 @@ from HuggingFaceDatasetAdapter import HuggingFaceDatasetAdapter
 from tokenizer import BPE
 from dataset import TextDataset, collate_fn
 from utils import Utils
-from CustomDataLoader import CustomDataLoader
 from trainer import Trainer
 from evaluator import Evaluator
 from generator import TextGenerator
@@ -18,30 +17,29 @@ from model.TransformerDirector import TransformerDirector
 def main():
     # Set random seeds for reproducibility
     Utils.set_seeds()
+    
     # Load configuration
     config = ModelConfig()
+    
     # Determine device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
-    # Load datasets using the adapter
-    train_adapter = HuggingFaceDatasetAdapter(dataset_name="wikitext-2-raw-v1", split="train")
-    valid_adapter = HuggingFaceDatasetAdapter(dataset_name="wikitext-2-raw-v1", split="validation")
-    test_adapter = HuggingFaceDatasetAdapter(dataset_name="wikitext-2-raw-v1", split="test")
-
-    # Extract text using direct access to `dataset`
-    train_texts = train_adapter.load_data()
     
-    valid_texts = valid_adapter.load_data()
-    test_texts = test_adapter.load_data()
-
+    # Create adapter instance
+    adapter = HuggingFaceDatasetAdapter(dataset_name="wikitext-2-raw-v1")
+    
+    # Load all data through the adapter
+    train_texts, valid_texts, test_texts = adapter.load_and_prepare_data()
+    
     # Initialize BPE tokenizer
     tokenizer = BPE()
-    
-    
+      
+    # Prepare data for BPE training using the adapter
+    bpe_data = adapter.prepare_bpe_data(train_texts)
     
     # Train BPE tokenizer
     print("Training BPE tokenizer...")
-    tokenizer.train_bpe(train_texts, config.num_merges)
+    tokenizer.train_bpe(bpe_data, config.num_merges)
     vocab_size = len(tokenizer.token_to_id)
     print(f"Vocabulary size: {vocab_size}")
     
@@ -50,11 +48,13 @@ def main():
     valid_dataset = TextDataset(valid_texts, tokenizer, config.max_length)
     test_dataset = TextDataset(test_texts, tokenizer, config.max_length)
     
-    # Create dataloaders
-    train_loader = CustomDataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, collate_fn=collate_fn)
-    valid_loader = CustomDataLoader(valid_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=collate_fn)
-    test_loader = CustomDataLoader(test_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=collate_fn)
-    
+    # Create dataloaders using the adapter
+    train_loader = adapter.get_data_loader(train_dataset, batch_size=config.batch_size, 
+                                         shuffle=True, collate_fn=collate_fn)
+    valid_loader = adapter.get_data_loader(valid_dataset, batch_size=config.batch_size, 
+                                         shuffle=False, collate_fn=collate_fn)
+    test_loader = adapter.get_data_loader(test_dataset, batch_size=config.batch_size, 
+                                        shuffle=False, collate_fn=collate_fn)
     
     
     builder = ConcreteTransformerBuilder()
