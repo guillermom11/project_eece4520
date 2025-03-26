@@ -1,11 +1,13 @@
 from collections import defaultdict
-
+import threading
 class BPE:
     _instance = None  # Class variable to hold the single instance
-
+    _lock = threading.Lock()
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
-            cls._instance = super(BPE, cls).__new__(cls)
+            with cls._lock:
+                if cls._instance is None:  
+                    cls._instance = super(BPE, cls).__new__(cls)
         return cls._instance
 
     def __init__(self):

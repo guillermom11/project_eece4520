@@ -7,11 +7,14 @@ from HuggingFaceDatasetAdapter import HuggingFaceDatasetAdapter
 from tokenizer import BPE
 from dataset import TextDataset, collate_fn
 from utils import Utils
-from dataloader import CustomDataLoader
+from CustomDataLoader import CustomDataLoader
 from trainer import Trainer
 from evaluator import Evaluator
 from generator import TextGenerator
-from model.TransformerBuilder import TransformerBuilder
+from model.ConcreteTransformerBuilder import ConcreteTransformerBuilder
+
+from model.TransformerDirector import TransformerDirector
+
 def main():
     # Set random seeds for reproducibility
     Utils.set_seeds()
@@ -21,26 +24,24 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     # Load datasets using the adapter
-    train_adapter = HuggingFaceDatasetAdapter(split="train")
-    valid_adapter = HuggingFaceDatasetAdapter(split="validation")
-    test_adapter = HuggingFaceDatasetAdapter(split="test")
+    train_adapter = HuggingFaceDatasetAdapter(dataset_name="wikitext-2-raw-v1", split="train")
+    valid_adapter = HuggingFaceDatasetAdapter(dataset_name="wikitext-2-raw-v1", split="validation")
+    test_adapter = HuggingFaceDatasetAdapter(dataset_name="wikitext-2-raw-v1", split="test")
+
+    # Extract text using direct access to `dataset`
+    train_texts = train_adapter.load_data()
     
-    # Extract text from the adapter
-    train_texts = train_adapter.get_texts()
-    valid_texts = valid_adapter.get_texts()
-    test_texts = test_adapter.get_texts()
-    # Load and prepare data
-    train_texts, valid_texts, test_texts = CustomDataLoader.load_and_prepare_data()
-    
+    valid_texts = valid_adapter.load_data()
+    test_texts = test_adapter.load_data()
+
     # Initialize BPE tokenizer
     tokenizer = BPE()
-      
-    # Prepare data for BPE training
-    bpe_data = CustomDataLoader.prepare_bpe_data(train_texts)
+    
+    
     
     # Train BPE tokenizer
     print("Training BPE tokenizer...")
-    tokenizer.train_bpe(bpe_data, config.num_merges)
+    tokenizer.train_bpe(train_texts, config.num_merges)
     vocab_size = len(tokenizer.token_to_id)
     print(f"Vocabulary size: {vocab_size}")
     
@@ -54,18 +55,25 @@ def main():
     valid_loader = CustomDataLoader(valid_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=collate_fn)
     test_loader = CustomDataLoader(test_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=collate_fn)
     
+    
+    
+    builder = ConcreteTransformerBuilder()
     model = (
-        TransformerBuilder()
-        .set_d_model(768)
-        .set_num_heads(12)
+        builder
+        .set_embedding_size(256)
+        .set_num_heads(8)
         .set_max_length(512)
-        .set_vocab_size(30000)  # Adjust as needed
-        .set_layers(12)
+        .set_vocab_size(20000)
+        .set_layers(6)
         .set_bias(True)
-        .set_dropout(0.1)
-        .set_device("cuda")
+        .set_dropout(0.15)
         .build()
     )
+    
+    ## Using Director for a Predefined Model
+    #director = TransformerDirector(ConcreteTransformerBuilder())
+    #small_transformer = director.construct_small_transformer()
+    #large_transformer = director.construct_large_transformer()
     
     optimizer = AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
     
@@ -136,5 +144,7 @@ def main():
     )
 
     print(f"\nPlease submit the entire '{submission_dir}' folder to your professor.")
+    
+    
 if __name__ == "__main__":
     main()
