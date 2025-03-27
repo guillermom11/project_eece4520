@@ -1,4 +1,4 @@
-from model/State import State
+from model.State import State
 class TrainingState(State):
     def handle(self, context):
         print("Model is training...")
