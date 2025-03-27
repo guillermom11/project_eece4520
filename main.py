@@ -12,8 +12,9 @@ from trainer import Trainer
 from evaluator import Evaluator
 from generator import TextGenerator
 from model.ConcreteTransformerBuilder import ConcreteTransformerBuilder
-
 from model.TransformerDirector import TransformerDirector
+from observer import Subject  
+from observer import ProgressLogger, EarlyStopping
 
 def main():
     # Set random seeds for reproducibility
@@ -95,6 +96,10 @@ def main():
         log_interval=config.log_interval
     )
 
+    # Add observers to trainer
+    trainer.add_observer(ProgressLogger())
+    trainer.add_observer(EarlyStopping(patience=3))
+
     # Start training
     train_losses, val_losses, train_steps, val_steps = trainer.train()
     
@@ -148,3 +153,5 @@ def main():
     
 if __name__ == "__main__":
     main()
+
+    
