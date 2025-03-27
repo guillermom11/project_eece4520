@@ -1,4 +1,4 @@
-import State from State.py
+from model/State import State
 class TrainingState(State):
     def handle(self, context):
         print("Model is training...")
