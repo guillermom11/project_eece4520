@@ -15,6 +15,7 @@ from model.ConcreteTransformerBuilder import ConcreteTransformerBuilder
 from model.TransformerDirector import TransformerDirector
 from observer import Subject  
 from observer import ProgressLogger, EarlyStopping
+from model.ModelContext import ModelContext
 
 def main():
     # Set random seeds for reproducibility
@@ -100,55 +101,9 @@ def main():
     trainer.add_observer(ProgressLogger())
     trainer.add_observer(EarlyStopping(patience=3))
 
-    # Start training
-    train_losses, val_losses, train_steps, val_steps = trainer.train()
-    
-        # Load the best model
-    checkpoint_dir = "./checkpoints"
-    checkpoint = torch.load(os.path.join(checkpoint_dir, 'best_model.pt'))
-    model.load_state_dict(checkpoint['model_state_dict'])
-
-    # Initialize evaluator
-    evaluator = Evaluator(model, test_loader, device)
-
-    # Evaluate on test set
-    test_perplexity = evaluator.calculate_perplexity()
-    print(f"Test perplexity: {test_perplexity:.2f}")
-
-    # Initialize text generator
-    text_generator = TextGenerator(model, tokenizer)
-
-    # Seed texts for text generation
-    seed_texts = [
-        "The president of the United States",
-        "In the beginning of the 20th century",
-        "Scientists have discovered a new",
-        "A dog is a type of",
-        "To buy a house in the United States you need",
-        "The history of artificial intelligence",
-        "When I look at the stars"
-    ]
-
-    # Generate text samples using different strategies
-    print("\nGenerating text samples:")
-    generation_examples = text_generator.generate_samples(seed_texts, device, max_length=50)
-
-    # Display generated texts
-    text_generator.display_generated_texts()
-
-    # Package all materials for submission
-    submission_dir = Utils.package_materials(
-        model=model,
-        tokenizer=tokenizer,
-        train_losses=train_losses,
-        val_losses=val_losses,
-        train_steps=train_steps,
-        val_steps=val_steps,
-        test_perplexity=test_perplexity,
-        generation_examples=generation_examples
-    )
-
-    print(f"\nPlease submit the entire '{submission_dir}' folder to your professor.")
+    context = ModelContext(config, model, trainer, test_loader, tokenizer, device)
+    for _ in range(5):  # Execute state transitions
+        context.execute()
     
     
 if __name__ == "__main__":
