@@ -7,6 +7,7 @@ from torch.optim import AdamW
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 from datasets import load_dataset
+from observer import Subject, ProgressLogger, TensorBoardLogger, EarlyStopping, CheckpointSaver
 from tqdm import tqdm
 import numpy as np
 import random
@@ -14,6 +15,8 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import json
 import pickle
+from observer import Subject 
+from observer import ProgressLogger, EarlyStopping
 
 # Set random seeds for reproducibility
 random.seed(42)
@@ -421,7 +424,6 @@ def package_materials(model, tokenizer, train_losses, val_losses, train_steps,va
     print(f"\nAll materials have been packaged in the '{submission_dir}' directory.")
     return submission_dir
 
-
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -442,6 +444,15 @@ def main():
 
     # Create checkpoint directory
     os.makedirs(checkpoint_dir, exist_ok=True)
+
+    # Initialize observers
+    subject = Subject()
+    progress_logger = ProgressLogger()
+    early_stopping = EarlyStopping(patience=3)
+    
+    # Add observers to the subject
+    subject.add_observer(progress_logger)
+    subject.add_observer(early_stopping)
 
     # Load the dataset (Wikitext-2)
     print("Loading dataset...")
@@ -537,6 +548,17 @@ def main():
             epoch_loss += current_loss
             global_step += 1
 
+            # Notify observers about batch end
+            should_stop = subject.notify_observers("batch_end", {
+                "batch_idx": batch_idx,
+                "total_batches": len(train_loader),
+                "loss": current_loss,
+                "lr": scheduler.get_last_lr()[0]
+            })
+            if should_stop:
+                print("Training stopped by observer")
+                break
+
             # Log training progress
             if batch_idx % log_interval == 0 and batch_idx > 0:
                 avg_loss = batch_loss / log_interval
@@ -566,7 +588,14 @@ def main():
                         val_loss += val_batch_loss.item()
 
                 avg_val_loss = val_loss / len(valid_loader)
-                print(f"| Validation | loss {avg_val_loss:5.2f}")
+                
+                # Notify observers about validation
+                should_stop = subject.notify_observers("validation", {
+                    "val_loss": avg_val_loss
+                })
+                if should_stop:
+                    print("Training stopped by observer")
+                    break
 
                 # Track validation loss
                 val_losses.append(avg_val_loss)
@@ -585,6 +614,10 @@ def main():
                     print(f"| Saved best model to {os.path.join(checkpoint_dir, 'best_model.pt')}")
 
                 model.train()
+
+        # Check if we should stop after epoch
+        if should_stop:
+            break
 
         # Calculate and store average epoch loss
         avg_epoch_loss = epoch_loss / len(train_loader)
