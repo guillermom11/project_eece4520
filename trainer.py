@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 class Trainer:
     def __init__(self, model, train_loader, valid_loader, optimizer, device, num_epochs, checkpoint_dir, 
                  warmup_steps, max_steps, min_lr=1e-6, log_interval=100):
+        super().__init__()  # Initialize Subject
         self.model = model
         self.train_loader = train_loader
         self.valid_loader = valid_loader
@@ -17,17 +18,17 @@ class Trainer:
         self.num_epochs = num_epochs
         self.checkpoint_dir = checkpoint_dir
         self.log_interval = log_interval
-        
+
         self.scheduler = self._get_lr_scheduler(warmup_steps, max_steps, min_lr)
         os.makedirs(checkpoint_dir, exist_ok=True)
-        
+
         self.best_val_loss = float('inf')
         self.global_step = 0
         self.train_losses = []
         self.val_losses = []
         self.train_steps = []
         self.val_steps = []
-        #if training stopped, because of some error. start from fresh or last checkpoint? Starting from scratch or resuming.
+
     def _get_lr_scheduler(self, warmup_steps, max_steps, min_lr):
         warmup_scheduler = lr_scheduler.LambdaLR(
             self.optimizer, 
@@ -53,11 +54,16 @@ class Trainer:
                 val_targets = val_targets.to(self.device)
                 _, val_batch_loss = self.model(val_inputs, val_targets)
                 val_loss += val_batch_loss.item()
+        
         avg_val_loss = val_loss / len(self.valid_loader)
-        print(f"| Validation | loss {avg_val_loss:5.2f}")
         self.val_losses.append(avg_val_loss)
         self.val_steps.append(self.global_step)
-        return avg_val_loss
+
+        # Notify observers about validation loss
+        # Notify observers and check stopping condition
+        should_stop = self.notify_observers("validation", {"val_loss": avg_val_loss})
+
+        return avg_val_loss, should_stop
     
     def _save_checkpoint(self, epoch, loss, filename):
         torch.save({
@@ -89,6 +95,14 @@ class Trainer:
                 batch_loss += current_loss
                 epoch_loss += current_loss
                 self.global_step += 1
+
+                 # Notify observers at batch end
+                self.notify_observers("batch_end", {
+                    "batch_idx": batch_idx, 
+                    "total_batches": len(self.train_loader),
+                    "loss": current_loss, 
+                    "lr": self.scheduler.get_last_lr()[0]
+                })
                 
                 if batch_idx % self.log_interval == 0 and batch_idx > 0:
                     avg_loss = batch_loss / self.log_interval
@@ -102,11 +116,16 @@ class Trainer:
                     start_time = time.time()
                 
                 if self.global_step % (10 * self.log_interval) == 0:
-                    avg_val_loss = self._evaluate()
+                    avg_val_loss, should_stop = self._evaluate()
                     if avg_val_loss < self.best_val_loss:
                         self.best_val_loss = avg_val_loss
                         self._save_checkpoint(epoch, self.best_val_loss, 'best_model.pt')
                         print(f"| Saved best model to {os.path.join(self.checkpoint_dir, 'best_model.pt')}")
+                    
+                    if should_stop:
+                        print("Training stopped early due to early stopping.")
+                        return
+
                     self.model.train()
             
             avg_epoch_loss = epoch_loss / len(self.train_loader)
@@ -114,7 +133,7 @@ class Trainer:
             self._save_checkpoint(epoch, avg_epoch_loss, f'checkpoint_epoch_{epoch+1}.pt')
         
         self._plot_loss()
-        return self.train_losses, self.val_losses,self.train_steps,self.val_steps
+        return self.train_losses, self.val_losses, self.train_steps, self.val_steps
 
     def _plot_loss(self):
         plt.figure(figsize=(10, 6))
