@@ -7,7 +7,6 @@ from torch.optim import AdamW
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 from datasets import load_dataset
-from observer import Subject, ProgressLogger, EarlyStopping
 from tqdm import tqdm
 import numpy as np
 import random
@@ -15,8 +14,54 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import json
 import pickle
-from observer import Subject 
-from observer import ProgressLogger, EarlyStopping
+from abc import ABC, abstractmethod
+from typing import Dict, Any, Set
+
+class TrainingObserver(ABC):
+    @abstractmethod
+    def update(self, event_type: str, data: Dict[str, Any]) -> bool:
+        """Observers should return True if training should stop, otherwise False."""
+        pass
+
+class Subject:
+    def __init__(self):
+        self._observers: Set[TrainingObserver] = set()
+
+    def add_observer(self, observer: TrainingObserver):
+        self._observers.add(observer)
+
+    def notify_observers(self, event_type: str, data: Dict[str, Any]) -> bool:
+        should_stop = False
+        for observer in self._observers:
+            if observer.update(event_type, data):
+                should_stop = True
+        return should_stop
+
+class ProgressLogger(TrainingObserver):
+    def update(self, event_type: str, data: Dict[str, Any]) -> bool:
+        if event_type == "batch_end":
+            print(f"Batch {data['batch_idx']}/{data['total_batches']} | Loss: {data['loss']:.4f} | LR: {data['lr']:.6f}")
+        elif event_type == "validation":
+            print(f"Validation Loss: {data['val_loss']:.4f}")
+        return False  # This observer doesn't stop training
+
+class EarlyStopping(TrainingObserver):
+    def __init__(self, patience=3):
+        self.patience = patience
+        self.best_loss = float('inf')
+        self.counter = 0
+
+    def update(self, event_type: str, data: Dict[str, Any]) -> bool:
+        if event_type == "validation":
+            if data["val_loss"] < self.best_loss:
+                self.best_loss = data["val_loss"]
+                self.counter = 0
+            else:
+                self.counter += 1
+                if self.counter >= self.patience:
+                    print("Early stopping triggered!")
+                    return True  # Return True to indicate stopping
+        return False
 
 # Set random seeds for reproducibility
 random.seed(42)
@@ -189,9 +234,15 @@ class BPE:
 
         return ids
 
-    def decode(self, ids):
+    def decode(self, ids,add_spaces=False):
         tokens = [self.id_to_token.get(id, "<UNK>") for id in ids]
-        text = ''.join(tokens)
+        if add_spaces:
+            # Add spaces between tokens
+            text = ' '.join(tokens)
+        else:
+            # Original behavior - concatenate tokens
+            text = ''.join(tokens)
+
         return text
 
 # Text dataset class
@@ -262,7 +313,7 @@ def greedy_decode(model, input_ids, max_length, tokenizer):
             next_token_id = torch.argmax(logits[:, -1, :], dim=-1, keepdim=True)
             input_ids = torch.cat([input_ids, next_token_id], dim=1)
 
-    return tokenizer.decode(input_ids[0].tolist())
+    return tokenizer.decode(input_ids[0].tolist(),add_spaces=True)
 
 def top_k_sampling(model, input_ids, max_length, tokenizer, k=50, temperature=1.0):
     model.eval()
@@ -281,7 +332,7 @@ def top_k_sampling(model, input_ids, max_length, tokenizer, k=50, temperature=1.
 
             input_ids = torch.cat([input_ids, next_token_id], dim=1)
 
-    return tokenizer.decode(input_ids[0].tolist())
+    return tokenizer.decode(input_ids[0].tolist(),add_spaces=True)
 
 def nucleus_sampling(model, input_ids, max_length, tokenizer, p=0.9, temperature=1.0):
     model.eval()
@@ -309,7 +360,7 @@ def nucleus_sampling(model, input_ids, max_length, tokenizer, p=0.9, temperature
 
             input_ids = torch.cat([input_ids, next_token_id], dim=1)
 
-    return tokenizer.decode(input_ids[0].tolist())
+    return tokenizer.decode(input_ids[0].tolist(),add_spaces=True)
 
 # Calculate perplexity
 def calculate_perplexity(model, dataloader, device):
@@ -449,7 +500,7 @@ def main():
     subject = Subject()
     progress_logger = ProgressLogger()
     early_stopping = EarlyStopping(patience=3)
-    
+
     # Add observers to the subject
     subject.add_observer(progress_logger)
     subject.add_observer(early_stopping)
@@ -530,9 +581,7 @@ def main():
         for batch_idx, (inputs, targets) in enumerate(tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}")):
             inputs = inputs.to(device)
             targets = targets.to(device)
-            print("inputs", inputs)
-            print("targets", targets)
-            break
+
             optimizer.zero_grad()
 
             logits, loss = model(inputs, targets)
@@ -590,7 +639,7 @@ def main():
                         val_loss += val_batch_loss.item()
 
                 avg_val_loss = val_loss / len(valid_loader)
-                
+
                 # Notify observers about validation
                 should_stop = subject.notify_observers("validation", {
                     "val_loss": avg_val_loss
@@ -714,6 +763,7 @@ def main():
     )
 
     print(f"\nPlease submit the entire '{submission_dir}' folder to your professor.")
+
 
 if __name__ == "__main__":
     main()

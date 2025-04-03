@@ -2,7 +2,7 @@ import os
 import torch
 from torch.optim import AdamW
 # Import local modules
-from config import ModelConfig
+from ModelConfig import ModelConfig
 from HuggingFaceDatasetAdapter import HuggingFaceDatasetAdapter
 from tokenizer import BPE
 from dataset import TextDataset, collate_fn

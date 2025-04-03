@@ -5,8 +5,9 @@ import time
 from tqdm import tqdm
 import os
 import matplotlib.pyplot as plt
+from observer import Subject, TrainingObserver
 
-class Trainer:
+class Trainer(Subject):
     def __init__(self, model, train_loader, valid_loader, optimizer, device, num_epochs, checkpoint_dir, 
                  warmup_steps, max_steps, min_lr=1e-6, log_interval=100):
         super().__init__()  # Initialize Subject
@@ -75,6 +76,7 @@ class Trainer:
         }, os.path.join(self.checkpoint_dir, filename))
 
     def train(self):
+        print("I am here training")
         for epoch in range(self.num_epochs):
             self.model.train()
             epoch_loss = 0

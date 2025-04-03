@@ -1,4 +1,5 @@
 from model.ConcreteStates import TrainingState
+from model.State import State
 class ModelContext:
     def __init__(self, config, model, trainer, test_loader, tokenizer, device):
         self.config = config
