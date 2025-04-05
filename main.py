@@ -41,15 +41,19 @@ def main():
     
     # Train BPE tokenizer
     print("Training BPE tokenizer...")
+    print("Data for BPE training:", len(bpe_data), bpe_data[:5])  # Print first 5 lines of BPE data
     tokenizer.train_bpe(bpe_data, config.num_merges)
     vocab_size = len(tokenizer.token_to_id)
+    #print("TOK TO ID",tokenizer.token_to_id)
     print(f"Vocabulary size: {vocab_size}")
-    
+    for text in train_texts[:5]:
+        print("Text:", text)
+        print("Encoded:", tokenizer.encode(text))
     # Create datasets
     train_dataset = TextDataset(train_texts, tokenizer, config.max_length)
     valid_dataset = TextDataset(valid_texts, tokenizer, config.max_length)
     test_dataset = TextDataset(test_texts, tokenizer, config.max_length)
-    
+    print(f"Train dataset size: {len(train_dataset)}")
     # Create dataloaders using the adapter
     train_loader = adapter.get_data_loader(train_dataset, batch_size=config.batch_size, 
                                          shuffle=True, collate_fn=collate_fn)
@@ -57,7 +61,7 @@ def main():
                                          shuffle=False, collate_fn=collate_fn)
     test_loader = adapter.get_data_loader(test_dataset, batch_size=config.batch_size, 
                                         shuffle=False, collate_fn=collate_fn)
-    
+    print(f"Train Loader size: {len(train_loader)}")
     
     builder = ConcreteTransformerBuilder()
     model = (
@@ -65,12 +69,12 @@ def main():
         .set_embedding_size(256)
         .set_num_heads(8)
         .set_max_length(512)
-        .set_vocab_size(20000)
+        .set_vocab_size(vocab_size)
         .set_layers(6)
         .set_bias(True)
         .set_dropout(0.15)
         .build()
-    )
+    ).to(device)
     
     ## Using Director for a Predefined Model
     #director = TransformerDirector(ConcreteTransformerBuilder())

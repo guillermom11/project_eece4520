@@ -87,7 +87,9 @@ class Trainer(Subject):
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 
                 self.optimizer.zero_grad()
+                #print(f"inputs: {inputs[0]}, targets: {targets[0]}")
                 logits, loss = self.model(inputs, targets)
+                #print("Here")
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                 self.optimizer.step()

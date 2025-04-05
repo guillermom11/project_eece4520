@@ -15,4 +15,8 @@ class CustomDataLoader(DataLoader):
 
     @staticmethod
     def prepare_bpe_data(train_texts, limit=10000):
-        return [list(word.lower()) for text in train_texts[:limit] for word in text.split() if word]
+        #print("THis is my train_texts",train_texts[:limit])
+        bpe_data = []
+        for text in train_texts[:limit]:
+            bpe_data.extend([list(word.lower()) for word in text.split() if word])
+        return bpe_data

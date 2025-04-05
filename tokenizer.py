@@ -20,7 +20,8 @@ class BPE:
     def build_vocab(self, data):
         for word in data:
             self.vocab[' '.join(word)] += 1
-
+        #print("Len build vocab",len(self.vocab))
+        #print("Vocab",self.vocab)
     def count_pairs(self):
         pairs = defaultdict(int)
         for word, freq in self.vocab.items():
@@ -46,6 +47,18 @@ class BPE:
             best_pair = max(pairs, key=pairs.get)
             self.merges[best_pair] = i
             self.merge_vocab(best_pair)
+
+        # Build token-to-id and id-to-token mappings
+        all_tokens = set()
+        for word in self.vocab.keys():
+            for token in word.split():
+                all_tokens.add(token)
+
+        # Special tokens
+        special_tokens = ["<PAD>", "<UNK>", "<BOS>", "<EOS>"]
+        for i, token in enumerate(special_tokens + list(all_tokens)):
+            self.token_to_id[token] = i
+            self.id_to_token[i] = token
 
     def tokenize(self, word):
         tokens = list(word)

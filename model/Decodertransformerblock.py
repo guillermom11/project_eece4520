@@ -18,13 +18,12 @@ class DecoderTransformerBlock(nn.Module):
         self.ln_2 = nn.LayerNorm(d_model)
         self.ffnn = FeedForwardNN(d_model, bias, dropout)
 
-    def forward(self, x,padding_mask=0):
+    def forward(self, x, padding_mask=None):
         bs, l, h = x.shape
         mask = torch.triu(torch.ones(l, l, device=x.device), 1).bool()
-        #residual connections
         norm_x = self.ln_1(x)
-        #masking attention
-        x = x + self.attn(norm_x,norm_x,norm_x,attn_mask=mask,key_padding_mask=padding_mask)[0]
+        x = x + self.attn(norm_x.transpose(0, 1), norm_x.transpose(0, 1), norm_x.transpose(0, 1),
+                         attn_mask=mask, key_padding_mask=padding_mask)[0].transpose(0, 1)
         norm_x = self.ln_2(x)
         x = x + self.ffnn(norm_x)
         return x

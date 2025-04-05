@@ -475,21 +475,23 @@ def main():
     bpe_data = []
     for text in train_texts[:10000]:  # Limit to 10000 examples for faster BPE training
         bpe_data.extend([list(word.lower()) for word in text.split() if word])
-
+    #print("Type of first item in bpe_data:", type(bpe_data[0]))
+    #print("First item:", bpe_data[0])
     tokenizer.train_bpe(bpe_data, num_merges)
     vocab_size = len(tokenizer.token_to_id)
     print(f"Vocabulary size: {vocab_size}")
+    
 
     # Create datasets
     train_dataset = TextDataset(train_texts, tokenizer, max_length)
     valid_dataset = TextDataset(valid_texts, tokenizer, max_length)
     test_dataset = TextDataset(test_texts, tokenizer, max_length)
-
+    print(f"Train dataset size: {len(train_dataset)}")
     # Create dataloaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
     valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
-
+    print(f"Train DataLoader size: {len(train_loader)}")
     # Initialize the model
     model = Transformer(
         d_model=d_model,
@@ -520,7 +522,7 @@ def main():
     val_losses = []
     train_steps = []
     val_steps = []
-
+    
     for epoch in range(num_epochs):
         model.train()
         epoch_loss = 0  # Track loss for the whole epoch
@@ -532,12 +534,11 @@ def main():
             targets = targets.to(device)
             print("inputs", inputs)
             print("targets", targets)
-            break
             optimizer.zero_grad()
 
             logits, loss = model(inputs, targets)
             loss.backward()
-
+            break
             # Gradient clipping
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
