@@ -3,17 +3,17 @@ class ModelConfig:
     
     def __init__(self):
         # Model architecture
-        self.d_model = 256
+        self.d_model = 512
         self.num_heads = 8
-        self.max_length = 128
+        self.max_length = 256
         self.layers = 6
-        self.dropout = 0.1
+        self.dropout = 0.2
         self.bias = True
         
         # Training hyperparameters
-        self.batch_size = 16
+        self.batch_size = 8
         self.num_epochs = 3
-        self.learning_rate = 0.0001
+        self.learning_rate = 3e-4
         self.weight_decay = 0.01
         self.log_interval = 100
         
