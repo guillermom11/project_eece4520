@@ -9,6 +9,10 @@ class TrainingState(State):
     def handle(self, context):
         print("Training model...")
         train_losses, val_losses, train_steps, val_steps = context.trainer.train()
+        context.train_losses = train_losses
+        context.val_losses = val_losses
+        context.train_steps = train_steps
+        context.val_steps = val_steps
         context.set_state(ValidationState())
 
 class ValidationState(State):
@@ -42,6 +46,7 @@ class TextGenerationState(State):
         ]
         print("\nGenerating text samples:")
         generation_examples = text_generator.generate_samples(seed_texts, context.device, max_length=50)
+        context.generation_examples = generation_examples
         text_generator.display_generated_texts()
         context.set_state(FinalState())
 
@@ -51,11 +56,10 @@ class FinalState(State):
         submission_dir = Utils.package_materials(
             model=context.model,
             tokenizer=context.tokenizer,
-            train_losses=train_losses,
-            val_losses=val_losses,
-            train_steps=train_steps,
-            val_steps=val_steps,
-            test_perplexity=test_perplexity,
-            generation_examples=generation_examples
+            train_losses=context.train_losses,
+            val_losses=context.val_losses,
+            train_steps=context.train_steps,
+            val_steps=context.val_steps,
+            generation_examples=context.generation_examples
         )
         print(f"Please submit the entire '{submission_dir}' folder.")

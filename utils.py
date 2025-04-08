@@ -6,7 +6,7 @@ import torch
 
 class Utils:
     @staticmethod
-    def package_materials(model, tokenizer, train_losses, val_losses, train_steps, val_steps, test_perplexity, generation_examples):
+    def package_materials(model, tokenizer, train_losses, val_losses, train_steps, val_steps, generation_examples):
         submission_dir = "./submission_package"
         os.makedirs(submission_dir, exist_ok=True)
         torch.save(model.state_dict(), os.path.join(submission_dir, "transformer_model.pt"))
@@ -24,8 +24,8 @@ class Utils:
         plt.legend()
         plt.grid(True)
         plt.savefig(os.path.join(submission_dir, "loss_curve.png"), dpi=300)
-        with open(os.path.join(submission_dir, "perplexity.txt"), "w") as f:
-            f.write(f"Test perplexity: {test_perplexity:.2f}")
+        #with open(os.path.join(submission_dir, "perplexity.txt"), "w") as f:
+            #f.write(f"Test perplexity: {test_perplexity:.2f}")
         with open(os.path.join(submission_dir, "generated_samples.txt"), "w") as f:
             for seed_text, results in generation_examples.items():
                 f.write(f"## Seed text: '{seed_text}'\n")

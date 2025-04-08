@@ -7,6 +7,12 @@ class ModelContext:
         self.trainer = trainer
         self.test_loader = test_loader
         self.tokenizer = tokenizer
+        self.train_losses = None
+        self.val_losses = None 
+        self.train_steps = None
+        self.val_steps = None
+        self.generation_examples = None
+        self.test_perplexity = None
         self.device = device
         self._state = TrainingState()
     
