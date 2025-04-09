@@ -93,4 +93,12 @@ class BPE:
 
     def decode(self, ids):
         tokens = [self.id_to_token.get(id, "<UNK>") for id in ids]
-        return ''.join(tokens)
+        words = []
+        for token in tokens:
+            if token in ["<PAD>", "<BOS>", "<EOS>"]:
+                continue
+            elif token == "<UNK>":
+                words.append("<UNK>")
+            else:
+                words.append(token)
+        return ' '.join(words)
