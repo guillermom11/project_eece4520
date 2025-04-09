@@ -46,9 +46,7 @@ def main():
     vocab_size = len(tokenizer.token_to_id)
     #print("TOK TO ID",tokenizer.token_to_id)
     print(f"Vocabulary size: {vocab_size}")
-    for text in train_texts[:5]:
-        print("Text:", text)
-        print("Encoded:", tokenizer.encode(text))
+    
     # Create datasets
     train_dataset = TextDataset(train_texts, tokenizer, config.max_length)
     valid_dataset = TextDataset(valid_texts, tokenizer, config.max_length)
