@@ -53,7 +53,7 @@ class TextGenerationState(State):
 class FinalState(State):
     def handle(self, context):
         print("Packaging materials for submission...")
-        submission_dir = Utils.package_materials(
+        """submission_dir = Utils.package_materials(
             model=context.model,
             tokenizer=context.tokenizer,
             train_losses=context.train_losses,
@@ -61,5 +61,5 @@ class FinalState(State):
             train_steps=context.train_steps,
             val_steps=context.val_steps,
             generation_examples=context.generation_examples
-        )
-        print(f"Please submit the entire '{submission_dir}' folder.")
+        )"""
+        #print(f"Please submit the entire '{submission_dir}' folder.")

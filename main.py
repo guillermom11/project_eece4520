@@ -41,7 +41,7 @@ def main():
     
     # Train BPE tokenizer
     print("Training BPE tokenizer...")
-    print("Data for BPE training:", len(bpe_data), bpe_data[:5])  # Print first 5 lines of BPE data
+    #print("Data for BPE training:", len(bpe_data), bpe_data[:5])  # Print first 5 lines of BPE data
     tokenizer.train_bpe(bpe_data, config.num_merges)
     vocab_size = len(tokenizer.token_to_id)
     tokenizer.save_vocab("tokenizer/")
@@ -65,13 +65,13 @@ def main():
     builder = ConcreteTransformerBuilder()
     model = (
         builder
-        .set_embedding_size(256)
-        .set_num_heads(8)
-        .set_max_length(512)
+        .set_embedding_size(config.d_model)
+        .set_num_heads(config.num_heads)
+        .set_max_length(config.max_length)
         .set_vocab_size(vocab_size)
-        .set_layers(6)
+        .set_layers(config.layers)
         .set_bias(True)
-        .set_dropout(0.2)
+        .set_dropout(config.dropout)
         .build()
     ).to(device)
     

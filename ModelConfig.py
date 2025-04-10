@@ -18,7 +18,7 @@ class ModelConfig:
         self.log_interval = 100
         
         # Tokenizer
-        self.num_merges = 64000  # For BPE
+        self.num_merges = 128000  # For BPE
         
         # File paths
         self.checkpoint_dir = "./checkpoints"

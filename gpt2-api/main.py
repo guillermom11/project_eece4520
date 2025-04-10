@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from generation import greedy_decode
@@ -7,16 +10,17 @@ import torch
 from logging_config import setup_logging
 import time
 from model.ConcreteTransformerBuilder import ConcreteTransformerBuilder
+from ModelConfig import ModelConfig
 
 setup_logging()
 import logging
-
+config = ModelConfig()
 app = FastAPI()
 
 tokenizer = BPE()
 tokenizer.load_vocab(
-    token_to_id_path="tokenizer/token_to_id.json",
-    id_to_token_path="tokenizer/id_to_token.json"
+    token_to_id_path="../tokenizer/token_to_id.json",
+    id_to_token_path="../tokenizer/id_to_token.json"
 )
 
 # Load model + tokenizer
@@ -26,17 +30,17 @@ vocab_size = len(tokenizer.token_to_id)
 builder = ConcreteTransformerBuilder()
 model = (
     builder
-    .set_embedding_size(256)
-    .set_num_heads(8)
-    .set_max_length(512)
+    .set_embedding_size(config.d_model)
+    .set_num_heads(config.num_heads)
+    .set_max_length(config.max_length)
     .set_vocab_size(vocab_size)
-    .set_layers(6)
+    .set_layers(config.layers)
     .set_bias(True)
-    .set_dropout(0.2)
+    .set_dropout(config.dropout)
     .build()
 ).to(device)
 
-model = load_model(model, "model/best_model.pt", device)
+model = load_model(model, "../model/best_model.pt", device)
 
 class GenerationRequest(BaseModel):
     prompt: str
