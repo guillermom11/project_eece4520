@@ -1,5 +1,7 @@
 from collections import defaultdict
 import threading
+import os
+import json
 class BPE:
     _instance = None  # Class variable to hold the single instance
     _lock = threading.Lock()
@@ -93,12 +95,22 @@ class BPE:
 
     def decode(self, ids):
         tokens = [self.id_to_token.get(id, "<UNK>") for id in ids]
-        words = []
-        for token in tokens:
-            if token in ["<PAD>", "<BOS>", "<EOS>"]:
-                continue
-            elif token == "<UNK>":
-                words.append("<UNK>")
-            else:
-                words.append(token)
-        return ' '.join(words)
+        return ' '.join(tokens)
+
+    def save_vocab(self, dir_path):
+        """Saves token_to_id and id_to_token as JSON files"""
+        os.makedirs(dir_path, exist_ok=True)
+
+        with open(os.path.join(dir_path, "token_to_id.json"), "w", encoding="utf-8") as f:
+            json.dump(self.token_to_id, f, ensure_ascii=False, indent=2)
+
+        with open(os.path.join(dir_path, "id_to_token.json"), "w", encoding="utf-8") as f:
+            json.dump({str(k): v for k, v in self.id_to_token.items()}, f, ensure_ascii=False, indent=2)
+
+    def load_vocab(self, token_to_id_path, id_to_token_path):
+        """Loads vocab from disk into the tokenizer"""
+        with open(token_to_id_path, "r", encoding="utf-8") as f:
+            self.token_to_id = json.load(f)
+
+        with open(id_to_token_path, "r", encoding="utf-8") as f:
+            self.id_to_token = {int(k): v for k, v in json.load(f).items()}

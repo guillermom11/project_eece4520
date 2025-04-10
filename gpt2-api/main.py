@@ -1,0 +1,59 @@
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel
+from generation import greedy_decode
+from model_loader import load_model
+from tokenizer import BPE  # Use your actual tokenizer
+import torch
+from logging_config import setup_logging
+import time
+from model.ConcreteTransformerBuilder import ConcreteTransformerBuilder
+
+setup_logging()
+import logging
+
+app = FastAPI()
+
+tokenizer = BPE()
+tokenizer.load_vocab(
+    token_to_id_path="tokenizer/token_to_id.json",
+    id_to_token_path="tokenizer/id_to_token.json"
+)
+
+# Load model + tokenizer
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+vocab_size = len(tokenizer.token_to_id)
+
+builder = ConcreteTransformerBuilder()
+model = (
+    builder
+    .set_embedding_size(256)
+    .set_num_heads(8)
+    .set_max_length(512)
+    .set_vocab_size(vocab_size)
+    .set_layers(6)
+    .set_bias(True)
+    .set_dropout(0.2)
+    .build()
+).to(device)
+
+model = load_model(model, "model/best_model.pt", device)
+
+class GenerationRequest(BaseModel):
+    prompt: str
+    max_length: int = 100
+
+@app.post("/generate")
+async def generate_text(req: GenerationRequest, request: Request):
+    start_time = time.time()
+    try:
+        if not req.prompt.strip():
+            raise ValueError("Empty prompt.")
+
+        output = greedy_decode(model, tokenizer, req.prompt, max_length=req.max_length, device=device)
+
+        logging.info(f"[{request.client.host}] Prompt: {req.prompt} | Time: {time.time() - start_time:.2f}s")
+        return {"prompt": req.prompt, "response": output}
+
+    except Exception as e:
+        logging.error(f"Error during generation: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
