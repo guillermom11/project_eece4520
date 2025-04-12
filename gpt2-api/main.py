@@ -44,7 +44,7 @@ model = load_model(model, "../model/best_model.pt", device)
 
 class GenerationRequest(BaseModel):
     prompt: str
-    max_length: int = 100
+    max_length: int = 100 #change this?
 
 @app.post("/generate")
 async def generate_text(req: GenerationRequest, request: Request):

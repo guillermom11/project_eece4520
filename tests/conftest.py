@@ -3,15 +3,15 @@ import torch
 from unittest.mock import MagicMock
 from tokenizer import BPE
 
+
 @pytest.fixture
 def trained_tokenizer():
-    # Reset the singleton instance manually for testing so that .vocab is not None
+    # Reset singleton before each test
     BPE._instance = None
-    bpe = BPE()
+    tokenizer = BPE()
     dummy_data = ["hello", "world"]
-    bpe.train_bpe(dummy_data, num_merges=5)
-    print("VOCAAAB",bpe.vocab)
-    return bpe
+    tokenizer.train_bpe(dummy_data, num_merges=5)
+    return tokenizer
 
 @pytest.fixture
 def dummy_model():

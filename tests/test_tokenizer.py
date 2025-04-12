@@ -13,3 +13,20 @@ def test_truncation_behavior(trained_tokenizer):
     max_len = 5
     truncated = encoded[:max_len]
     assert len(truncated) == max_len
+    
+def test_save_and_load_vocab(trained_tokenizer, tmp_path):
+    save_dir = tmp_path / "vocab"
+    trained_tokenizer.save_vocab(str(save_dir))
+
+    # Reset singleton again to ensure clean load
+    from tokenizer import BPE
+    BPE._instance = None
+    new_tokenizer = BPE()
+    new_tokenizer.load_vocab(
+        token_to_id_path=str(save_dir / "token_to_id.json"),
+        id_to_token_path=str(save_dir / "id_to_token.json")
+    )
+
+    # Check exact equality
+    assert trained_tokenizer.token_to_id == new_tokenizer.token_to_id
+    assert trained_tokenizer.id_to_token == new_tokenizer.id_to_token

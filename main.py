@@ -40,9 +40,10 @@ def main():
     bpe_data = adapter.prepare_bpe_data(train_texts)
     
     # Train BPE tokenizer
-    print("Training BPE tokenizer...")
+    #print("Training BPE tokenizer...")
+    print("Using pre trained tokenizer")
     #print("Data for BPE training:", len(bpe_data), bpe_data[:5])  # Print first 5 lines of BPE data
-    tokenizer.train_bpe(bpe_data, config.num_merges)
+    #tokenizer.train_bpe(bpe_data, config.num_merges)
     vocab_size = len(tokenizer.token_to_id)
     tokenizer.save_vocab("tokenizer/")
     #print("TOK TO ID",tokenizer.token_to_id)
