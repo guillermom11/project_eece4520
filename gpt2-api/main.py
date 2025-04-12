@@ -13,6 +13,7 @@ from model.ConcreteTransformerBuilder import ConcreteTransformerBuilder
 from ModelConfig import ModelConfig
 
 setup_logging()
+
 import logging
 config = ModelConfig()
 app = FastAPI()
