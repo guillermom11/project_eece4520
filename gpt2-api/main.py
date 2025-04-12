@@ -19,8 +19,7 @@ app = FastAPI()
 
 tokenizer = BPE()
 tokenizer.load_vocab(
-    token_to_id_path="../tokenizer/token_to_id.json",
-    id_to_token_path="../tokenizer/id_to_token.json"
+    "tokenizer/"
 )
 
 # Load model + tokenizer
