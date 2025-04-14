@@ -3,7 +3,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
-from generation import greedy_decode
+from gpt2_api.generation import greedy_decode
 from model_loader import load_model
 from tokenizer import BPE  # Use your actual tokenizer
 import torch
@@ -18,9 +18,8 @@ config = ModelConfig()
 app = FastAPI()
 
 tokenizer = BPE()
-tokenizer.load_vocab(
-    "../tokenizer"
-)
+tokenizer_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tokenizer"))
+tokenizer.load_vocab(tokenizer_path)
 
 # Load model + tokenizer
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -39,7 +38,9 @@ model = (
     .build()
 ).to(device)
 
-model = load_model(model, "../model/best_model.pt", device)
+model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "model", "best_model.pt"))
+model = load_model(model, model_path, device)
+
 
 class GenerationRequest(BaseModel):
     prompt: str

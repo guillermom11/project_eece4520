@@ -1,6 +1,6 @@
 import torch
 
-def greedy_decode(model, tokenizer, input_text, max_length=50, device='cpu'):
+def greedy_decode(model, tokenizer, input_text, max_length=500, device='cpu'):
     input_ids = torch.tensor([tokenizer.encode(input_text)]).to(device)
     model.eval()
     with torch.no_grad():

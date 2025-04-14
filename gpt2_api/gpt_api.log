@@ -1,0 +1,20 @@
+2025-04-09 21:49:07,544 [INFO] Logging setup complete.
+2025-04-09 21:51:49,715 [INFO] Logging setup complete.
+2025-04-09 21:52:16,609 [INFO] Logging setup complete.
+2025-04-09 21:52:28,462 [INFO] Logging setup complete.
+2025-04-09 21:52:38,183 [INFO] Logging setup complete.
+2025-04-09 21:53:15,733 [INFO] Logging setup complete.
+2025-04-09 21:56:50,122 [INFO] [127.0.0.1] Prompt: Once upon a time | Time: 4.90s
+2025-04-12 23:07:40,483 [INFO] Logging setup complete.
+2025-04-12 23:09:38,081 [INFO] Logging setup complete.
+2025-04-12 23:11:35,833 [INFO] Logging setup complete.
+2025-04-12 17:30:07,673 [INFO] Logging setup complete.
+2025-04-12 17:31:24,320 [WARNING] From C:\Users\gmasc\AppData\Local\Programs\Python\Python311\Lib\site-packages\keras\src\losses.py:2976: The name tf.losses.sparse_softmax_cross_entropy is deprecated. Please use tf.compat.v1.losses.sparse_softmax_cross_entropy instead.
+
+2025-04-12 17:31:27,796 [INFO] [127.0.0.1] Prompt: my name is Lucyyyy | Time: 34.67s
+2025-04-12 17:33:04,209 [INFO] Logging setup complete.
+2025-04-13 20:48:22,395 [INFO] Logging setup complete.
+2025-04-13 20:50:56,668 [WARNING] From C:\Users\gmasc\AppData\Local\Programs\Python\Python311\Lib\site-packages\keras\src\losses.py:2976: The name tf.losses.sparse_softmax_cross_entropy is deprecated. Please use tf.compat.v1.losses.sparse_softmax_cross_entropy instead.
+
+2025-04-13 20:51:02,885 [INFO] [127.0.0.1] Prompt: The robot began to | Time: 83.10s
+2025-04-13 20:51:47,775 [INFO] [127.0.0.1] Prompt: Lucia yaniz is  | Time: 5.93s

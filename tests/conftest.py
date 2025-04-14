@@ -5,14 +5,10 @@ from tokenizer import BPE
 
 
 @pytest.fixture
-def trained_tokenizer():
-    # Reset singleton before each test
-    BPE._instance = None
+def fresh_tokenizer():
+    BPE._instance = None  # Reset singleton
     tokenizer = BPE()
-    dummy_data = ["hello", "world"]
-    tokenizer.train_bpe(dummy_data, num_merges=5)
     return tokenizer
-
 @pytest.fixture
 def dummy_model():
     class DummyModel:
